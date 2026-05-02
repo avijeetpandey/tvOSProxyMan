@@ -13,6 +13,7 @@ final class ProxyConnection {
 
     private unowned let server: ProxyServer
     private let proxyPort: UInt16
+    private let isLocalClient: Bool
     private let logger = Logger(subsystem: "com.tvOSProxyMan", category: "ProxyConnection")
     private var networkQueue: DispatchQueue?
 
@@ -20,6 +21,17 @@ final class ProxyConnection {
         self.clientConnection = nwConnection
         self.server = server
         self.proxyPort = proxyPort
+        self.isLocalClient = ProxyConnection.isLoopbackEndpoint(nwConnection.endpoint)
+    }
+
+    private static func isLoopbackEndpoint(_ endpoint: NWEndpoint) -> Bool {
+        guard case .hostPort(let host, _) = endpoint else { return false }
+        switch host {
+        case .ipv4(let addr):  return addr.rawValue == Data([127, 0, 0, 1])
+        case .ipv6(let addr):  return addr.rawValue == Data(repeating: 0, count: 15) + Data([1])
+        case .name(let n, _):  return n == "localhost" || n == "127.0.0.1" || n == "::1"
+        @unknown default:      return false
+        }
     }
 
     func start(on queue: DispatchQueue) {
@@ -116,7 +128,8 @@ final class ProxyConnection {
         let tx = ProxyTransaction(
             method: "CONNECT", scheme: "https",
             host: host, port: port, path: "",
-            requestHeaders: headers.map { HTTPHeaderField(name: $0.name, value: $0.value) }
+            requestHeaders: headers.map { HTTPHeaderField(name: $0.name, value: $0.value) },
+            isLocalTraffic: isLocalClient
         )
         let txID = tx.id
         server.capture(tx)
@@ -161,7 +174,8 @@ final class ProxyConnection {
             let mitm = MITMConnection(
                 decryptedConn: decryptedConn,
                 targetHost: host, targetPort: port,
-                server: self.server
+                server: self.server,
+                isLocalTraffic: self.isLocalClient
             )
             mitm.start(on: self.networkQueue ?? .global(qos: .userInitiated))
         }
@@ -296,7 +310,8 @@ final class ProxyConnection {
                 method: method, scheme: "http", host: host, port: port,
                 path: path, query: query,
                 requestHeaders: headers.map { HTTPHeaderField(name: $0.name, value: $0.value) },
-                requestBody: body
+                requestBody: body,
+                isLocalTraffic: isLocalClient
             )
             let txID = tx.id
 

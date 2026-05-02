@@ -6,8 +6,18 @@ struct RequestRowView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            MethodBadge(method: transaction.method)
-                .frame(width: 72, alignment: .leading)
+            VStack(alignment: .center, spacing: 6) {
+                MethodBadge(method: transaction.method)
+                if transaction.isLocalTraffic {
+                    Text("Device")
+                        .font(.system(size: 10, weight: .semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.cyan.opacity(0.18), in: Capsule())
+                        .foregroundStyle(.cyan)
+                }
+            }
+            .frame(width: 72, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(transaction.path.isEmpty ? "/" : transaction.path)

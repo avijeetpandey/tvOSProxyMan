@@ -23,6 +23,10 @@ struct ProxyTransaction: Identifiable, Sendable {
     var startTime: Date
     var endTime: Date?
 
+    // True when the request originated from this device (127.0.0.1 / ::1 client,
+    // or intercepted via ProxyURLProtocol rather than the NWListener).
+    let isLocalTraffic: Bool
+
     var duration: TimeInterval? {
         endTime.map { $0.timeIntervalSince(startTime) }
     }
@@ -52,7 +56,8 @@ struct ProxyTransaction: Identifiable, Sendable {
         path: String,
         query: String? = nil,
         requestHeaders: [HTTPHeaderField],
-        requestBody: Data? = nil
+        requestBody: Data? = nil,
+        isLocalTraffic: Bool = false
     ) {
         self.id = UUID()
         self.timestamp = Date()
@@ -67,5 +72,6 @@ struct ProxyTransaction: Identifiable, Sendable {
         self.requestBody = requestBody
         self.responseHeaders = []
         self.state = .pending
+        self.isLocalTraffic = isLocalTraffic
     }
 }

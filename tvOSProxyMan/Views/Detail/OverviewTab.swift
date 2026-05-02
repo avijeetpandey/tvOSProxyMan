@@ -12,13 +12,16 @@ struct OverviewTab: View {
             }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()),
-                                GridItem(.flexible()), GridItem(.flexible())],
+                                GridItem(.flexible()), GridItem(.flexible()),
+                                GridItem(.flexible())],
                       spacing: 24) {
                 MetricTile(label: "Method",   value: tx.method)
                 MetricTile(label: "Status",   value: tx.responseStatusCode.map { "\($0)" } ?? "—",
                            color: statusColor(tx.responseStatusCode))
                 MetricTile(label: "Duration", value: tx.duration.map { durationStr($0) } ?? "—")
                 MetricTile(label: "Scheme",   value: tx.scheme.uppercased())
+                MetricTile(label: "Source",   value: tx.isLocalTraffic ? "Device" : "Network",
+                           color: tx.isLocalTraffic ? .cyan : .secondary)
             }
 
             if let msg = tx.responseStatusMessage {
