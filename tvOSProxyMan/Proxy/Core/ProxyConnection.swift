@@ -12,12 +12,14 @@ final class ProxyConnection {
     private var requestBuffer = Data()
 
     private unowned let server: ProxyServer
+    private let proxyPort: UInt16
     private let logger = Logger(subsystem: "com.tvOSProxyMan", category: "ProxyConnection")
     private var networkQueue: DispatchQueue?
 
-    init(nwConnection: NWConnection, server: ProxyServer) {
+    init(nwConnection: NWConnection, server: ProxyServer, proxyPort: UInt16) {
         self.clientConnection = nwConnection
         self.server = server
+        self.proxyPort = proxyPort
     }
 
     func start(on queue: DispatchQueue) {
@@ -103,6 +105,12 @@ final class ProxyConnection {
 
     private func handleCONNECT(target: String, headers: [(name: String, value: String)]) {
         let (host, port) = splitHostPort(target, default: 443)
+
+        if isSelfConnection(host: host, port: port) {
+            respond(status: "421 Misdirected Request")
+            return
+        }
+
         logger.debug("CONNECT \(host):\(port)")
 
         let tx = ProxyTransaction(
@@ -233,6 +241,12 @@ final class ProxyConnection {
             respond(status: "400 Bad Request"); return
         }
         let port  = url.port ?? 80
+
+        if isSelfConnection(host: host, port: port) {
+            respond(status: "421 Misdirected Request")
+            return
+        }
+
         let path  = url.path.isEmpty ? "/" : url.path
         let query = url.query
 
@@ -434,11 +448,20 @@ final class ProxyConnection {
 
     // MARK: - Helpers
 
+    // Returns true when the destination is our own proxy listener, which would
+    // cause an infinite forwarding loop when the device proxies its own traffic.
+    private func isSelfConnection(host: String, port: Int) -> Bool {
+        let loopbacks: Set<String> = ["127.0.0.1", "::1", "localhost"]
+        return loopbacks.contains(host.lowercased()) && port == Int(proxyPort)
+    }
+
     private func makeConnection(host: String, port: Int, tls: Bool) -> NWConnection {
         let endpoint = NWEndpoint.hostPort(
             host: NWEndpoint.Host(host),
             port: NWEndpoint.Port(rawValue: UInt16(port)) ?? 80
         )
+        // NWConnection operates below the CFNetwork HTTP-proxy layer and does not
+        // inherit system proxy settings, preventing re-entry into our own listener.
         return NWConnection(to: endpoint, using: tls ? .tls : .tcp)
     }
 

@@ -193,6 +193,8 @@ final class MITMConnection {
                 host: NWEndpoint.Host(targetHost),
                 port: NWEndpoint.Port(rawValue: UInt16(targetPort)) ?? 443
             )
+            // .tls parameters operate below the CFNetwork HTTP-proxy layer and do
+            // not inherit system proxy settings — outbound traffic goes direct.
             let origin = NWConnection(to: endpoint, using: .tls)
             originConn = origin
 
