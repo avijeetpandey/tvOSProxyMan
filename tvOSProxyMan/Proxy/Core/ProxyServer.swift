@@ -37,6 +37,9 @@ final class ProxyServer {
             }
         }
 
+        // NWParameters.tcp with no requiredInterfaceType binds to all interfaces,
+        // including the loopback interface (127.0.0.1 / ::1). This lets the device
+        // proxy its own traffic by setting its Wi-Fi proxy to 127.0.0.1:9090.
         let parameters = NWParameters.tcp
         parameters.allowLocalEndpointReuse = true
 
@@ -77,9 +80,13 @@ final class ProxyServer {
         }
 
         let queue = networkQueue
+        // Capture the port as a plain value so the nonisolated newConnectionHandler
+        // can pass it to ProxyConnection without touching the @MainActor property.
+        let capturedPort = port
         listener?.newConnectionHandler = { [weak self] nwConnection in
             guard let self else { return }
-            let conn = ProxyConnection(nwConnection: nwConnection, server: self)
+            let conn = ProxyConnection(nwConnection: nwConnection, server: self,
+                                       proxyPort: capturedPort)
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.connections[conn.id] = conn
