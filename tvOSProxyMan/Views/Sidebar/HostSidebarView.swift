@@ -3,6 +3,7 @@ import SwiftUI
 struct HostSidebarView: View {
     @Environment(ProxySessionStore.self) private var store
     @Binding var showRules: Bool
+    @State private var showInstructions = false
 
     var body: some View {
         @Bindable var store = store
@@ -19,6 +20,9 @@ struct HostSidebarView: View {
                              + MapLocalEngine.shared.rules.filter(\.isEnabled).count
                 Button(ruleCount > 0 ? "Rules (\(ruleCount))" : "Rules",
                        systemImage: "slider.horizontal.3") { showRules = true }
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Setup", systemImage: "info.circle") { showInstructions = true }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(store.isRunning ? "Stop" : "Start",
@@ -42,6 +46,9 @@ struct HostSidebarView: View {
             if store.allHosts.isEmpty {
                 SidebarEmptyView(store: store)
             }
+        }
+        .sheet(isPresented: $showInstructions) {
+            InstructionsView()
         }
     }
 }
