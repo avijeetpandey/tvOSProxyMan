@@ -54,7 +54,8 @@ final class ProxyURLProtocol: URLProtocol {
             host: host, port: port,
             path: path, query: url.query,
             requestHeaders: reqHeaders,
-            requestBody: request.httpBody
+            requestBody: request.httpBody,
+            isLocalTraffic: true
         )
         let txID = tx.id
 

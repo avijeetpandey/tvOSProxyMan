@@ -7,6 +7,7 @@ final class MITMConnection {
     private let targetHost: String
     private let targetPort: Int
     private unowned let server: ProxyServer
+    private let isLocalTraffic: Bool
 
     private var originConn: NWConnection?
     private var requestBuffer = Data()
@@ -16,11 +17,13 @@ final class MITMConnection {
 
     init(decryptedConn: NWConnection,
          targetHost: String, targetPort: Int,
-         server: ProxyServer) {
-        self.clientConn  = decryptedConn
-        self.targetHost  = targetHost
-        self.targetPort  = targetPort
-        self.server      = server
+         server: ProxyServer,
+         isLocalTraffic: Bool = false) {
+        self.clientConn      = decryptedConn
+        self.targetHost      = targetHost
+        self.targetPort      = targetPort
+        self.server          = server
+        self.isLocalTraffic  = isLocalTraffic
     }
 
     func start(on queue: DispatchQueue) {
@@ -136,7 +139,8 @@ final class MITMConnection {
                 method: method, scheme: "https",
                 host: targetHost, port: targetPort,
                 path: normalPath, query: query,
-                requestHeaders: headerFields, requestBody: body
+                requestHeaders: headerFields, requestBody: body,
+                isLocalTraffic: isLocalTraffic
             )
             let txID = tx.id
 
