@@ -47,7 +47,7 @@ A fully functional HTTPS/HTTP web debugging proxy that runs natively on Apple TV
 ## Quick Start
 
 1. **Clone / open** the project in Xcode.
-2. Set your **Development Team** in *Signing & Capabilities* (or use the existing `JTYWLXSK79`).
+2. Set your **Development Team** in *Signing & Capabilities* 
 3. Select your Apple TV (or the tvOS 18.x simulator) as the run destination.
 4. **Run** (`⌘R`). The proxy starts automatically on port **9090**.
 5. Note the Apple TV's IP address (Settings → Network on the Apple TV, or check your router).
